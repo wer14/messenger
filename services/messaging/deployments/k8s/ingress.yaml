@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: messaging-service
+  namespace: messenger
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: messenger.info
+      http:
+        paths:
+          - path: /messaging(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: messaging-service
+                port:
+                  number: 80

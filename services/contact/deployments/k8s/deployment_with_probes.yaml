@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contact-service
+  namespace: messenger
+  labels:
+    app: contact-service
+    project: messenger
+spec:
+  replicas: 2
+  selector: # какие поды нужно поддерживать
+    matchLabels:
+      app: contact-service
+  template: # для подов
+    metadata:
+      labels:
+        app: contact-service
+        project: messenger
+    spec:
+      containers:
+        - name: contact-container
+          image: contact:latest
+          imagePullPolicy: "Never" # for local in minikube
+          ports:
+            - containerPort: 8080
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          # resources:
+          #   requests:
+          #     memory: "128Mi"
+          #     cpu: "250m"
+          #   limits:
+          #     memory: "1024Mi"
+          #     cpu: "1"
+  strategy:
+    type: RollingUpdate # Recreate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
