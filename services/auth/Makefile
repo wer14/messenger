@@ -3,7 +3,11 @@ SERVICE := auth
 BUILD_PATH := ./build
 K8S_PATH := ./deployments/k8s
 
-.PHONY: build apply restart logs
+PROTO_REPO=../../api/proto
+BUF=buf
+
+
+.PHONY: build apply restart logs proto proto-auth clean
 
 build:
 	eval $$(minikube docker-env); \
@@ -22,3 +26,9 @@ restart:
 
 logs:
 	kubectl logs -n $(NAMESPACE) -l app=$(SERVICE)-service
+
+proto-auth:
+	$(BUF) generate --template buf.gen.yaml $(PROTO_REPO)
+
+clean:
+	rm -rf ../services/**/internal/gen/*
