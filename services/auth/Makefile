@@ -1,5 +1,5 @@
 NAMESPACE := messenger
-SERVICE := auth
+SERVICE := auth-service
 BUILD_PATH := ./build
 K8S_PATH := ./deployments/k8s
 
@@ -22,10 +22,10 @@ apply:
 	fi
 
 restart:
-	kubectl rollout restart deployment $(SERVICE)-service -n $(NAMESPACE) || true
+	kubectl rollout restart deployment $(SERVICE) -n $(NAMESPACE) || true
 
 logs:
-	kubectl logs -n $(NAMESPACE) -l app=$(SERVICE)-service
+	kubectl logs -n $(NAMESPACE) -l app=$(SERVICE)
 
 proto-auth:
 	$(BUF) generate --template buf.gen.yaml $(PROTO_REPO)
