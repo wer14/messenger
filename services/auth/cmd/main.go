@@ -1,40 +1,32 @@
-package cmd
+package main
 
 import (
-	"net/http"
+	"context"
+	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/wer14/messenger/services/auth/internal/server"
 )
 
 func main() {
-	e := echo.New()
-
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	// for startup probe
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
-	})
-
-	// for readiness probe
-	e.GET("/ready", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
-	})
-
-	e.GET("/hello", func(c echo.Context) error {
-		return c.HTML(http.StatusOK, "Hello, Auth!")
-	})
-
-	httpPort := os.Getenv("PORT")
-	if httpPort == "" {
-		httpPort = "8080"
+	servers, err := server.Start()
+	if err != nil {
+		log.Fatalf("failed to start servers: %v", err)
 	}
 
-	time.Sleep(5 * time.Second)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	e.Logger.Fatal(e.Start(":" + httpPort))
+	<-ctx.Done()
+
+	log.Println("shutdown signal received")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := servers.Shutdown(shutdownCtx); err != nil {
+		log.Printf("graceful shutdown failed: %v", err)
+	}
 }

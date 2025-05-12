@@ -8,10 +8,10 @@ metadata:
     project: messenger
 spec:
   replicas: 2
-  selector: # какие поды нужно поддерживать
+  selector:
     matchLabels:
       app: auth-service
-  template: # для подов
+  template:
     metadata:
       labels:
         app: auth-service
@@ -22,24 +22,31 @@ spec:
           image: auth-service:latest
           imagePullPolicy: "Never" # for local in minikube
           ports:
-            - containerPort: 8080
-            - containerPort: 8082
+            - containerPort: 8080 # HTTP
+            - containerPort: 8082 # gRPC
           startupProbe:
-            httpGet:
-              path: /health
-              port: 8080
+            exec:
+              command:
+                - grpc-health-probe
+                - -addr=:8082
+                - -service=auth.AuthService
             failureThreshold: 30
-            periodSeconds: 10
+            periodSeconds: 5
           livenessProbe:
-            tcpSocket:
-              port: 8082 # grpc
-            initialDelaySeconds: 15
+            exec:
+              command:
+                - grpc-health-probe
+                - -addr=:8082
+                - -service=auth.AuthService
+            initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /ready
-              port: 8080
-            initialDelaySeconds: 15
+            exec:
+              command:
+                - grpc-health-probe
+                - -addr=:8082
+                - -service=auth.AuthService
+            initialDelaySeconds: 5
             periodSeconds: 10
           # resources:
           #   requests:

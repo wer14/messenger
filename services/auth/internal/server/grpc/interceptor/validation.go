@@ -13,13 +13,20 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func ValidationUnaryInterceptor(validator protovalidate.Validator) grpc.UnaryServerInterceptor {
+func MethodScopedValidatioUnaryInterceptor(
+	validator protovalidate.Validator,
+	enabled map[string]bool,
+) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
+		if !enabled[info.FullMethod] {
+			return handler(ctx, req)
+		}
+
 		msg, ok := req.(proto.Message)
 		if !ok {
 			return nil, status.Error(codes.Internal, "request does not implement proto.Message")
