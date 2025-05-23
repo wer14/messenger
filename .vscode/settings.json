@@ -1,0 +1,9 @@
+{
+    "yaml.schemas": {
+        "kubernetes://schema/v1@namespace": [
+            "file:///Users/mg/Documents/Projetcs/messenger/services/messaging/deployments/namespace.yml",
+            "file:///Users/mg/Documents/Projetcs/messenger/services/messaging/deployments/deployment_with_probes.yml",
+            "file:///Users/mg/Documents/Projetcs/messenger/services/messaging/deployments/service_node_port.yaml"
+        ]
+    }
+}
