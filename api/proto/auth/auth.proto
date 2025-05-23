@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package auth.v1;
+option go_package = "github.com/your-org/messenger-proto/gen/go/auth/v1;authv1";
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc OAuthLogin(OAuthLoginRequest) returns (AuthResponse);
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message OAuthLoginRequest {
+  string provider = 1;     // e.g. "google", "github"
+  string access_token = 2; // OAuth access token from frontend
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string user_id = 3;
+}
+
+message VerifyEmailRequest {
+  string verification_code = 1;
+}
+
+message VerifyEmailResponse {
+  bool success = 1;
+}
