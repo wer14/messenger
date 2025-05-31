@@ -1,40 +1,86 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/wer14/messenger/services/gateway/internal/app"
+	"github.com/wer14/messenger/services/gateway/internal/app/server"
+	"github.com/wer14/messenger/services/gateway/internal/app/strategy"
+	"github.com/wer14/messenger/services/gateway/internal/handler"
+	"github.com/wer14/messenger/services/gateway/internal/services/gateway"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	httpAddr string = ":8080"
+	grpcPort string = "50051"
 )
 
 func main() {
-	e := echo.New()
+	gatewayServer := initGatewayServer()
+	gatewayClient := initGRPCClient(grpcPort)
 
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	grpcGatewayMux := runtime.NewServeMux()
+	handler.RegisterHealthSystemRoutes(grpcGatewayMux)
 
-	// for startup probe
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
-	})
+	app := app.NewApp(
+		strategy.NewGrpcServerStrategy(
+			grpcPort,
+			newGRPCServer(),
+			[]server.GRPCRegistrar{gatewayServer},
+		),
+		strategy.NewHTTPServerStrategy(
+			httpAddr,
+			newHTTPServer(httpAddr),
+			[]server.HTTPGatewayRegistrar{gatewayServer},
+			grpcGatewayMux,
+			gatewayClient,
+		),
+	)
 
-	// for readiness probe
-	e.GET("/ready", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
-	})
-
-	e.GET("/hello", func(c echo.Context) error {
-		return c.HTML(http.StatusOK, "Hello, Gateway!")
-	})
-
-	httpPort := os.Getenv("PORT")
-	if httpPort == "" {
-		httpPort = "8080"
+	if err := app.Run(); err != nil {
+		log.Fatalf("infra start error: %v", err)
 	}
 
-	time.Sleep(5 * time.Second)
+	app.Stop()
+}
 
-	e.Logger.Fatal(e.Start(":" + httpPort))
+func initGatewayServer() *gateway.Server {
+	gatewayServer := gateway.NewGatewayServer()
+
+	return gatewayServer
+}
+
+func newHTTPServer(httpPort string) *http.Server {
+	httpServer := &http.Server{
+		Addr:         httpPort,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+
+	return httpServer
+}
+
+func newGRPCServer() *grpc.Server {
+	grpcServer := grpc.NewServer()
+
+	return grpcServer
+}
+
+func initGRPCClient(grpcPort string) *grpc.ClientConn {
+	conn, err := grpc.NewClient(
+		"127.0.0.1"+grpcPort,
+		[]grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		}...,
+	)
+	if err != nil {
+		log.Fatalf("failed to create grpc client connection: %v", err)
+	}
+
+	return conn
 }

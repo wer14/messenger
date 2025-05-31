@@ -8,17 +8,17 @@ managed:
 
 plugins:
   - local: protoc-gen-go
-    out: internal/gen
+    out: ../services/gateway/internal/gen
     opt:
       - paths=source_relative
 
   - local: protoc-gen-go-grpc
-    out: internal/gen
+    out: ../services/gateway/internal/gen
     opt:
       - paths=source_relative
 
   - local: protoc-gen-grpc-gateway
-    out: internal/gen
+    out: ../services/gateway/internal/gen
     opt:
       - paths=source_relative
       - generate_unbound_methods=true
@@ -26,7 +26,7 @@ plugins:
       - logtostderr=true
 
   - local: protoc-gen-openapiv2
-    out: swagger
+    out: ../services/gateway/internal/gen/swagger
     strategy: all
     opt:
       - generate_unbound_methods=true
