@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+
+package gateway;
+option go_package = "github.com/your-org/messenger-proto/gen/go/gateway/gateway";
+
+service GatewayService {
+  rpc Hello(HelloRequest) returns (HelloResponse){
+    option (google.api.http) = {
+      post: "/api/v1/gateway/hello"
+      body: "*"
+    };
+  }
+}
+
+message HelloResponse {
+  string msg = 1;
+}
+
+message HelloRequest {
+  string msg = 1;
+}

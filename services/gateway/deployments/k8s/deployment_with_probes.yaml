@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: gateway-container
-          image: gateway:latest
+          image: gateway-service:latest
           imagePullPolicy: "Never" # for local in minikube
           ports:
             - containerPort: 8080
